@@ -9,5 +9,5 @@
 
 window.CHECKIN_CONFIG = {
   GOOGLE_CLIENT_ID: '460755476572-cluketgfop5b5otiqkm9vhoftnm4qtgm.apps.googleusercontent.com',
-  API_URL: 'https://script.google.com/macros/s/AKfycbwBcGQQJHYrZWVqiGcM5EFTaER8kppzWSMLl2bC13Q/exec'
+  API_URL: 'https://script.google.com/macros/s/AKfycbz4SWsHbp68Q6p20i2iTMUJAJjPRi6yJmPPVW2uDb-ojqLYK0xKpysOOL1V5JDUb_fQ/exec'
 };
