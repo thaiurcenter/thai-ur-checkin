@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>เช็กอิน — thai-ur office</title>
+<meta name="theme-color" content="#0f766e">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#f1f5f9; --card:#ffffff; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0;
+    --ok:#059669; --ok-soft:#d1fae5; --warn:#b45309; --warn-soft:#fef3c7;
+    --bad:#dc2626; --bad-soft:#fee2e2; --brand:#0f766e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#0b1120; --card:#111827; --ink:#e5e7eb; --muted:#94a3b8; --line:#1f2937;
+      --ok:#34d399; --ok-soft:#064e3b; --warn:#fbbf24; --warn-soft:#452c06;
+      --bad:#f87171; --bad-soft:#4c1414; --brand:#2dd4bf;
+    }
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body {
+    margin:0; padding:24px 16px 40px; background:var(--bg); color:var(--ink);
+    font-family:"Noto Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
+    display:flex; justify-content:center; min-height:100vh;
+  }
+  .wrap { width:100%; max-width:420px; }
+
+  .office { text-align:center; font-size:13px; letter-spacing:.06em; text-transform:uppercase;
+            color:var(--muted); margin-bottom:4px; }
+  .clock  { text-align:center; font-size:40px; font-weight:700; line-height:1.1;
+            font-variant-numeric:tabular-nums; }
+  .date   { text-align:center; font-size:13px; color:var(--muted); margin-bottom:20px; }
+
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px;
+          padding:18px; margin-bottom:14px; }
+  .name { font-size:19px; font-weight:700; }
+  .pos  { font-size:13px; color:var(--muted); margin-top:2px; }
+
+  .rows { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px; }
+  .slot { border:1px solid var(--line); border-radius:12px; padding:10px 12px; }
+  .slot .k { font-size:11px; color:var(--muted); }
+  .slot .v { font-size:20px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:2px; }
+  .slot .s { font-size:11px; margin-top:3px; }
+  .slot.empty .v { color:var(--muted); font-weight:400; }
+
+  button.main {
+    width:100%; border:0; border-radius:14px; padding:18px; font-size:17px; font-weight:700;
+    font-family:inherit; color:#fff; background:var(--brand); cursor:pointer;
+    transition:opacity .15s, transform .08s;
+  }
+  button.main:active:not(:disabled) { transform:scale(.985); }
+  button.main:disabled { opacity:.5; cursor:default; }
+  button.main.out { background:#475569; }
+  @media (prefers-color-scheme: dark) {
+    button.main { color:#042f2e; }
+    button.main.out { background:#334155; color:#e2e8f0; }
+  }
+
+  .msg { margin-top:14px; border-radius:12px; padding:13px 15px; font-size:14px;
+         line-height:1.6; white-space:pre-line; display:none; }
+  .msg.show { display:block; }
+  .msg.ok   { background:var(--ok-soft);   color:var(--ok);   border:1px solid var(--ok); }
+  .msg.bad  { background:var(--bad-soft);  color:var(--bad);  border:1px solid var(--bad); }
+  .msg.info { background:var(--warn-soft); color:var(--warn); border:1px solid var(--warn); }
+
+  .note  { margin-top:18px; font-size:11px; color:var(--muted); text-align:center; line-height:1.7; }
+  .quiet { background:none; border:0; font-family:inherit; font-size:11px; color:var(--muted);
+           text-decoration:underline; cursor:pointer; padding:4px; }
+  .tag   { display:inline-block; font-size:11px; padding:2px 8px; border-radius:99px;
+           background:var(--warn-soft); color:var(--warn); margin-top:10px; }
+  .spin  { display:inline-block; width:13px; height:13px; border:2px solid currentColor;
+           border-right-color:transparent; border-radius:50%; animation:r .7s linear infinite;
+           vertical-align:-2px; margin-right:7px; }
+  @keyframes r { to { transform:rotate(360deg); } }
+
+  .center { text-align:center; padding:28px 12px; }
+  .center p { color:var(--muted); font-size:14px; line-height:1.7; }
+  #gbtn { display:flex; justify-content:center; margin-top:18px; min-height:44px; }
+  .hide { display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- กำลังโหลด -->
+  <div id="viewLoading" class="center">
+    <p><span class="spin"></span>กำลังโหลด…</p>
+  </div>
+
+  <!-- ยังไม่ได้ลงชื่อเข้าใช้ -->
+  <div id="viewSignin" class="hide">
+    <div class="office" id="officeS">thai-ur office</div>
+    <div class="card center">
+      <p>ลงชื่อเข้าใช้ด้วยบัญชี Google ที่ลงทะเบียนไว้กับแอดมิน<br>เพื่อบันทึกเวลาเข้า-ออกงาน</p>
+      <div id="gbtn"></div>
+    </div>
+    <div class="msg" id="msgSignin"></div>
+  </div>
+
+  <!-- หน้าใช้งานจริง -->
+  <div id="viewApp" class="hide">
+    <div class="office" id="office"></div>
+    <div class="clock"  id="clock">--:--</div>
+    <div class="date"   id="date"></div>
+
+    <div class="card">
+      <div class="name" id="name"></div>
+      <div class="pos"  id="pos"></div>
+      <div id="dayTag"></div>
+
+      <div class="rows">
+        <div class="slot" id="slotIn">
+          <div class="k">เวลาเข้า</div>
+          <div class="v" id="inTime">—</div>
+          <div class="s" id="inStatus"></div>
+        </div>
+        <div class="slot" id="slotOut">
+          <div class="k">เวลาออก</div>
+          <div class="v" id="outTime">—</div>
+          <div class="s" id="outStatus"></div>
+        </div>
+      </div>
+    </div>
+
+    <button class="main" id="btn">กำลังโหลด…</button>
+    <div class="msg" id="msg"></div>
+
+    <div class="note" id="note"></div>
+    <div style="text-align:center"><button class="quiet" id="signout">ออกจากระบบ</button></div>
+  </div>
+
+</div>
+
+<script src="config.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+(function () {
+  'use strict';
+
+  var CFG = window.CHECKIN_CONFIG || {};
+  var idToken = null;
+  var DATA = null;
+  var mode = null;
+  var clockTimer = null;
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function view(which) {
+    ['viewLoading', 'viewSignin', 'viewApp'].forEach(function (v) {
+      $(v).classList.toggle('hide', v !== which);
+    });
+  }
+
+  function show(el, text, kind) {
+    el.textContent = text;
+    el.className = 'msg show ' + kind;
+  }
+
+  // ── เรียก API ─────────────────────────────────────────────
+  // ทางหลัก: POST แบบ text/plain (simple request ไม่มี preflight)
+  // ทางสำรอง: JSONP เผื่อเบราว์เซอร์บล็อก CORS ของ Apps Script
+  function api(payload) {
+    return fetch(CFG.API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+      redirect: 'follow'
+    }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).catch(function () {
+      return jsonp(payload);
+    });
+  }
+
+  function jsonp(payload) {
+    return new Promise(function (resolve, reject) {
+      var cb = '__cb' + Math.random().toString(36).slice(2);
+      var s = document.createElement('script');
+      var timer = setTimeout(function () { cleanup(); reject(new Error('timeout')); }, 25000);
+
+      function cleanup() {
+        clearTimeout(timer);
+        try { delete window[cb]; } catch (e) { window[cb] = undefined; }
+        if (s.parentNode) s.parentNode.removeChild(s);
+      }
+      window[cb] = function (data) { cleanup(); resolve(data); };
+      s.onerror = function () { cleanup(); reject(new Error('jsonp failed')); };
+
+      var q = [];
+      Object.keys(payload).forEach(function (k) {
+        if (payload[k] === undefined || payload[k] === null) return;
+        q.push(encodeURIComponent(k) + '=' + encodeURIComponent(payload[k]));
+      });
+      q.push('callback=' + cb);
+      s.src = CFG.API_URL + '?' + q.join('&');
+      document.head.appendChild(s);
+    });
+  }
+
+  // ── รหัสอุปกรณ์ (สุ่ม ไม่ผูกกับตัวบุคคล) ───────────────────
+  function deviceId() {
+    try {
+      var v = localStorage.getItem('checkin_dev');
+      if (!v) {
+        v = (window.crypto && crypto.randomUUID)
+          ? crypto.randomUUID()
+          : String(Date.now()) + Math.random().toString(36).slice(2, 10);
+        localStorage.setItem('checkin_dev', v);
+      }
+      return v;
+    } catch (e) { return ''; }
+  }
+
+  // ── ตำแหน่ง ───────────────────────────────────────────────
+  function getBestPosition(targetAcc, maxMs) {
+    return new Promise(function (resolve, reject) {
+      if (!navigator.geolocation) { reject({ code: 0 }); return; }
+      var best = null, lastErr = null, done = false, wid = null;
+
+      function finish() {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        try { if (wid !== null) navigator.geolocation.clearWatch(wid); } catch (e) {}
+        if (best) resolve(best); else reject(lastErr || { code: 3 });
+      }
+      var timer = setTimeout(finish, maxMs);
+
+      try {
+        wid = navigator.geolocation.watchPosition(
+          function (pos) {
+            if (!best || pos.coords.accuracy < best.coords.accuracy) best = pos;
+            if (best.coords.accuracy <= targetAcc) finish();
+          },
+          function (err) { lastErr = err; if (err.code === 1) finish(); },
+          { enableHighAccuracy: true, timeout: maxMs, maximumAge: 0 }
+        );
+      } catch (e) { lastErr = { code: 0 }; finish(); }
+    });
+  }
+
+  function geoErrorText(err) {
+    if (err && err.code === 1) {
+      return 'ไม่ได้รับอนุญาตให้เข้าถึงตำแหน่ง\n' +
+             'เปิดสิทธิ์ตำแหน่งให้เบราว์เซอร์ในการตั้งค่าเครื่อง แล้วรีเฟรชหน้านี้';
+    }
+    if (err && err.code === 2) return 'หาตำแหน่งไม่ได้ ลองเปิด GPS หรือย้ายไปที่โล่งแล้วลองใหม่';
+    if (err && err.code === 3) return 'หาตำแหน่งนานเกินไป ลองใหม่อีกครั้ง';
+    return 'อุปกรณ์นี้ไม่รองรับการหาตำแหน่ง';
+  }
+
+  // ── นาฬิกา เดินตามเวลาเซิร์ฟเวอร์ ──────────────────────────
+  function startClock() {
+    if (clockTimer) clearInterval(clockTimer);
+    var base = DATA.serverTime.split(':');
+    var baseMin = parseInt(base[0], 10) * 60 + parseInt(base[1], 10);
+    var anchor = DATA.serverNow;
+    var localAnchor = Date.now();
+
+    function tick() {
+      var elapsed = Math.floor((Date.now() - localAnchor) / 60000);
+      var m = ((baseMin + elapsed) % 1440 + 1440) % 1440;
+      $('clock').textContent =
+        String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+    }
+    tick();
+    clockTimer = setInterval(tick, 1000);
+    void anchor;
+  }
+
+  // ── วาดหน้า ───────────────────────────────────────────────
+  function paintAll() {
+    $('office').textContent = DATA.office;
+    $('date').textContent   = DATA.serverDate;
+    $('name').textContent   = DATA.name;
+    $('pos').textContent    = DATA.position;
+    $('note').textContent =
+      'เวลาทำงาน ' + DATA.workStart + ' – ' + DATA.workEnd + ' น. (ผ่อนผัน ' + DATA.graceMin + ' นาที)\n' +
+      'ระบบบันทึกเฉพาะ ชื่อ ตำแหน่ง เวลา และระยะห่างโดยประมาณ — ไม่เก็บพิกัดของคุณ';
+    $('dayTag').innerHTML = DATA.isWorkday ? '' : '<span class="tag">วันนี้ไม่ใช่วันทำงาน</span>';
+    paintState(DATA.state);
+    startClock();
+  }
+
+  function paintState(s) {
+    $('inTime').textContent  = s.inTime  || '—';
+    $('outTime').textContent = s.outTime || '—';
+    $('slotIn').classList.toggle('empty', !s.inTime);
+    $('slotOut').classList.toggle('empty', !s.outTime);
+
+    $('inStatus').textContent  = s.inStatus  || '';
+    $('outStatus').textContent = s.outStatus || '';
+    $('inStatus').style.color  = (s.inStatus  && s.inStatus  !== 'ปกติ') ? 'var(--warn)' : 'var(--ok)';
+    $('outStatus').style.color = (s.outStatus && s.outStatus !== 'ปกติ') ? 'var(--warn)' : 'var(--ok)';
+
+    var btn = $('btn');
+    if (!s.hasIn) {
+      mode = 'IN';  btn.textContent = 'เช็กอิน';  btn.className = 'main';     btn.disabled = false;
+    } else if (!s.hasOut) {
+      mode = 'OUT'; btn.textContent = 'เช็กเอาต์'; btn.className = 'main out'; btn.disabled = false;
+    } else if (DATA.allowReopen) {
+      mode = 'IN';  btn.textContent = 'เช็กอินอีกครั้ง'; btn.className = 'main'; btn.disabled = false;
+    } else {
+      mode = null;  btn.textContent = 'ครบแล้วสำหรับวันนี้'; btn.disabled = true;
+    }
+  }
+
+  // ── ปุ่มเช็กอิน/เอาต์ ──────────────────────────────────────
+  $('btn').addEventListener('click', function () {
+    if (!mode) return;
+    var btn = $('btn');
+    var label = btn.textContent;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span>กำลังหาตำแหน่ง…';
+    $('msg').className = 'msg';
+
+    getBestPosition(40, 15000).then(function (pos) {
+      btn.innerHTML = '<span class="spin"></span>กำลังบันทึก…';
+      return api({
+        action:    mode,
+        idToken:   idToken,
+        lat:       pos.coords.latitude,
+        lng:       pos.coords.longitude,
+        accuracy:  pos.coords.accuracy,
+        ageMs:     Date.now() - pos.timestamp,
+        clientNow: Date.now(),
+        deviceId:  deviceId()
+      });
+    }).then(function (res) {
+      if (res && res.ok) {
+        show($('msg'), res.message + ' เวลา ' + res.time + ' น.\nสถานะ: ' + res.status +
+                       '\nระยะห่างจากออฟฟิศ ~' + res.distance,
+             res.status === 'ปกติ' ? 'ok' : 'info');
+        paintState(res.state);
+        return;
+      }
+      if (res && res.code === 'BAD_TOKEN') { requireSignin('การลงชื่อเข้าใช้หมดอายุ กรุณาลงชื่อเข้าใช้อีกครั้ง'); return; }
+      show($('msg'), (res && res.message) || 'เกิดข้อผิดพลาด ลองใหม่อีกครั้ง', 'bad');
+      btn.textContent = label;
+      btn.disabled = false;
+    }).catch(function (err) {
+      var isGeo = err && typeof err.code === 'number' && err.code <= 3;
+      show($('msg'), isGeo ? geoErrorText(err) : 'เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ ลองใหม่อีกครั้ง', 'bad');
+      btn.textContent = label;
+      btn.disabled = false;
+    });
+  });
+
+  $('signout').addEventListener('click', function () {
+    try { google.accounts.id.disableAutoSelect(); } catch (e) {}
+    idToken = null;
+    location.reload();
+  });
+
+  // ── Google Sign-In ────────────────────────────────────────
+  function requireSignin(message) {
+    idToken = null;
+    view('viewSignin');
+    if (message) show($('msgSignin'), message, 'info');
+    try { google.accounts.id.prompt(); } catch (e) {}
+  }
+
+  function onCredential(resp) {
+    if (!resp || !resp.credential) { requireSignin('ลงชื่อเข้าใช้ไม่สำเร็จ ลองใหม่อีกครั้ง'); return; }
+    idToken = resp.credential;
+    view('viewLoading');
+
+    api({ action: 'STATE', idToken: idToken }).then(function (res) {
+      if (res && res.ok) { DATA = res; view('viewApp'); paintAll(); return; }
+      requireSignin((res && res.message) || 'เข้าใช้งานไม่สำเร็จ');
+    }).catch(function () {
+      requireSignin('เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ ตรวจอินเทอร์เน็ตแล้วลองใหม่');
+    });
+  }
+
+  function bootGsi() {
+    if (!window.google || !google.accounts || !google.accounts.id) { setTimeout(bootGsi, 120); return; }
+    google.accounts.id.initialize({
+      client_id: CFG.GOOGLE_CLIENT_ID,
+      callback: onCredential,
+      auto_select: true,
+      cancel_on_tap_outside: false,
+      use_fedcm_for_prompt: true
+    });
+    google.accounts.id.renderButton($('gbtn'), {
+      theme: 'filled_blue', size: 'large', shape: 'pill',
+      text: 'signin_with', locale: 'th', width: 280
+    });
+    google.accounts.id.prompt();
+    // ถ้าเข้าอัตโนมัติไม่ติดภายใน 2.5 วิ ให้โชว์ปุ่มแทนหน้าโหลด
+    setTimeout(function () { if (!idToken) view('viewSignin'); }, 2500);
+  }
+
+  // ── เริ่ม ──────────────────────────────────────────────────
+  if (!CFG.API_URL || CFG.API_URL.indexOf('ใส่ค่าที่นี่') !== -1 ||
+      !CFG.GOOGLE_CLIENT_ID || CFG.GOOGLE_CLIENT_ID.indexOf('ใส่ค่าที่นี่') !== -1) {
+    view('viewSignin');
+    show($('msgSignin'), 'ยังตั้งค่า config.js ไม่ครบ — ต้องใส่ GOOGLE_CLIENT_ID และ API_URL', 'bad');
+  } else if (!window.isSecureContext || !navigator.geolocation) {
+    view('viewSignin');
+    show($('msgSignin'), 'เบราว์เซอร์นี้ใช้หาตำแหน่งไม่ได้\nกรุณาเปิดลิงก์ใน Chrome หรือ Safari ' +
+                         '(ไม่ใช่เบราว์เซอร์ในแอป LINE หรือ Facebook)', 'bad');
+  } else {
+    bootGsi();
+  }
+})();
+</script>
+</body>
+</html>
